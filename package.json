@@ -1,0 +1,96 @@
+{
+  "name": "generator-tools-configuration",
+  "version": "0.0.0",
+  "description": "Yeoman generator to create configurations for babel, eslint, prettier, and other tools",
+  "homepage": "https://github.com/cristopher1/generator-tools-configuration",
+  "main": "./dist/cjs/index.cjs",
+  "type": "module",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    "types": "./dist/types/index.d.ts",
+    "import": "./dist/esm/index.mjs",
+    "require": "./dist/cjs/index.cjs"
+  },
+  "keywords": [],
+  "files": [
+    "dist"
+  ],
+  "author": {
+    "name": "Cristopher Jiménez",
+    "email": "",
+    "url": "https://github.com/cristopher1/generator-tools-configuration"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.22.10",
+    "@babel/core": "^7.22.10",
+    "@babel/plugin-transform-runtime": "^7.22.10",
+    "@babel/preset-env": "^7.22.10",
+    "@commitlint/cli": "^17.8.0",
+    "@commitlint/config-conventional": "^17.8.0",
+    "@faker-js/faker": "^8.0.2",
+    "@jest/globals": "^29.7.0",
+    "cross-env": "^7.0.3",
+    "eslint": "^8.47.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.28.1",
+    "eslint-plugin-jest": "^27.2.3",
+    "eslint-plugin-jsdoc": "^46.8.2",
+    "eslint-plugin-n": "^16.0.2",
+    "eslint-plugin-promise": "^6.1.1",
+    "husky": "^8.0.3",
+    "jest": "^29.7.0",
+    "lint-staged": "^14.0.1",
+    "prettier": "^3.0.2",
+    "prettier-plugin-jsdoc": "^1.1.1",
+    "readme-md-generator": "^1.0.0",
+    "rimraf": "^5.0.1",
+    "typescript": "^5.2.2",
+    "yeoman-assert": "^3.1.1",
+    "yeoman-environment": "^4.0.0",
+    "yeoman-test": "^8.2.0"
+  },
+  "engines": {
+    "npm": ">= 4.0.0"
+  },
+  "dependencies": {
+    "@babel/runtime-corejs3": "^7.22.11",
+    "chalk": "^2.1.0",
+    "core-js": "^3.32.1",
+    "generator-license": "^5.6.0",
+    "yeoman-generator": "^6.0.1",
+    "yosay": "^2.0.2"
+  },
+  "scripts": {
+    "init:husky": "husky install",
+    "documentation:create": "npx readme-md-generator -y",
+    "init": "npm run init:husky",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write .",
+    "format:build-stage": "prettier --check generators",
+    "format:build-stage:fix": "prettier --write generators",
+    "lint": "eslint -c .eslintrc.yml --no-eslintrc --ext .js,.mjs .",
+    "lint:fix": "npm run lint -- --fix",
+    "lint:build-stage": "eslint -c .eslintrc.yml --no-eslintrc --ext .js,.mjs generators",
+    "lint:build-stage:fix": "npm run lint:build-stage -- --fix",
+    "build:clean": "rimraf dist",
+    "build:clean-dist-tmp": "rimraf dist/tmp",
+    "build:tsc": "tsc",
+    "build:es5": "cross-env NODE_ENV=buildCommonJS npx babel --config-file ./babel.config.json generators --out-dir dist/cjs/generators --out-file-extension .cjs --ignore '/**/templates/' --copy-files --include-dotfiles",
+    "build:es6": "cross-env NODE_ENV=buildESmodules npx babel --config-file ./babel.config.json generators --out-dir dist/esm/generators --out-file-extension .mjs --ignore '/**/templates/' --copy-files --include-dotfiles",
+    "prebuild": "npm run lint:build-stage && npm run format:build-stage:fix && npm run build:clean",
+    "build": "npm run build:tsc && npm run build:es5 && npm run build:es6 && npm run build:clean-dist-tmp",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --verbose",
+    "commitlint": "npx commitlint --edit",
+    "lint-staged": "npx lint-staged",
+    "prepublishOnly": "npm run build",
+    "quality-check": "npm run format && npm run lint && npm run test"
+  },
+  "repository": {
+    "url": "https://github.com/cristopher1/generator-tools-configuration"
+  },
+  "bugs": {
+    "url": "https://github.com/cristopher1/generator-tools-configuration/issues"
+  },
+  "license": "MIT"
+}
