@@ -29,6 +29,10 @@ export default class GeneratorESlint extends Generator {
       default: false,
       description: 'Saves the eslint configuration into package.json',
     })
+    this.option('add-scripts', {
+      default: false,
+      description: 'Adds scripts to package.json',
+    })
     this.option('skip-eslintignore', {
       default: 'false',
       description: 'Not generate a .eslintginore file',
@@ -42,6 +46,7 @@ export default class GeneratorESlint extends Generator {
       includeJsDoc: this.options.jsdoc,
       includePrettier: this.options.prettier,
       saveToPackageJson: this.options['save-to-packagejson'],
+      addScripts: this.options['add-scripts'],
       excludeEslintIgnore: this.options['skip-eslintignore'],
     }
   }
@@ -103,8 +108,13 @@ export default class GeneratorESlint extends Generator {
   }
 
   configuring() {
-    const { includeJest, includeStandard, includeJsDoc, includePrettier } =
-      this.answers
+    const {
+      includeJest,
+      includeStandard,
+      includeJsDoc,
+      includePrettier,
+      addScripts,
+    } = this.answers
     const packageJsonContent = this.packageJsonContent
     const eslintConfig = this.eslintConfig
     const configurations = []
@@ -129,6 +139,13 @@ export default class GeneratorESlint extends Generator {
         if (this.packageJsonContent.devDependencies) {
           config.configurator.removeDependencies(packageJsonContent)
         }
+      }
+    }
+
+    if (addScripts) {
+      packageJsonContent.scripts = {
+        lint: 'eslint --ext .js,.mjs,.cjs .',
+        'lint:fix': 'npm run lint -- --fix',
       }
     }
   }
