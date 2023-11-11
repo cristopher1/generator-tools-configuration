@@ -46,10 +46,8 @@ export default class GeneratorESlint extends Generator {
     }
   }
 
-  initializing() {
-    this.#saveOptions()
-
-    this.eslintConfig = {
+  #getDefaultEslintConfig() {
+    return {
       env: {
         browser: true,
         es2021: true,
@@ -71,12 +69,30 @@ export default class GeneratorESlint extends Generator {
         sourceType: 'module',
       },
     }
+  }
 
-    this.dependencies = {
-      devDependencies: {
-        eslint: '^8.47.0',
-      },
+  #addDefaultDependencies(packageJsonContent) {
+    packageJsonContent.devDependencies = {
+      eslint: '^8.47.0',
     }
+  }
+
+  #getPackageJsonContent() {
+    const defaultPackageJsonContent = {}
+    const packageJsonContent = this.fs.readJSON('package.json')
+
+    return packageJsonContent ?? defaultPackageJsonContent
+  }
+
+  initializing() {
+    this.#saveOptions()
+    const eslintConfig = this.#getDefaultEslintConfig()
+    const packageJsonContent = this.#getPackageJsonContent()
+
+    this.#addDefaultDependencies(packageJsonContent)
+
+    this.eslintConfig = eslintConfig
+    this.packageJsonContent = packageJsonContent
   }
 
   #createConfig(config, isInclude) {
@@ -89,7 +105,8 @@ export default class GeneratorESlint extends Generator {
   configuring() {
     const { includeJest, includeStandard, includeJsDoc, includePrettier } =
       this.answers
-
+    const packageJsonContent = this.packageJsonContent
+    const eslintConfig = this.eslintConfig
     const configurations = []
 
     const jest = this.#createConfig(new Jest(), includeJest)
@@ -106,30 +123,30 @@ export default class GeneratorESlint extends Generator {
 
     for (const config of configurations) {
       if (config.isInclude) {
-        config.configurator.addConfiguration(this.eslintConfig)
-        if (this.dependencies) {
-          config.configurator.addDependencies(this.dependencies)
-        }
+        config.configurator.addConfiguration(eslintConfig)
+        config.configurator.addDependencies(packageJsonContent)
       } else {
-        if (this.dependencies) {
-          config.configurator.removeDependencies(this.dependencies)
+        if (this.packageJsonContent.devDependencies) {
+          config.configurator.removeDependencies(packageJsonContent)
         }
       }
     }
   }
 
+  #writePackageJson(eslintConfigWriter) {
+    eslintConfigWriter.writeContent('package.json', this.packageJsonContent)
+  }
+
   #writeEslintConfigToPackageJson(eslintConfigWriter, eslintConfig) {
     const fileName = 'package.json'
 
-    eslintConfigWriter.addContent(fileName, { eslintConfig })
-    eslintConfigWriter.addContent('package.json', this.dependencies)
+    eslintConfigWriter.writeContent(fileName, { eslintConfig })
   }
 
   #writeEslintConfigToEslintrcJson(eslintConfigWriter, eslintConfig) {
     const fileName = '.eslintrc.json'
 
-    eslintConfigWriter.addContent(fileName, eslintConfig)
-    eslintConfigWriter.addContent('package.json', this.dependencies)
+    eslintConfigWriter.writeContent(fileName, eslintConfig)
   }
 
   #createEslintConfig(writer) {
@@ -141,6 +158,8 @@ export default class GeneratorESlint extends Generator {
     } else {
       this.#writeEslintConfigToEslintrcJson(writer, eslintConfig)
     }
+
+    this.#writePackageJson(writer)
   }
 
   writing() {
