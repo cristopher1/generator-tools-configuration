@@ -5,11 +5,7 @@ export class EslintJsonConfigWriter {
     this.#writer = writer
   }
 
-  addContent(fileName, content) {
-    this.#writer.extendJSON(fileName, content)
-  }
-
-  overrideContent(fileName, content) {
+  writeContent(fileName, content) {
     this.#writer.writeJSON(fileName, content)
   }
 }
