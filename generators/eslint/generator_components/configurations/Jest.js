@@ -19,6 +19,6 @@ export class Jest {
   }
 
   removeDependencies(dependencies) {
-    dependencies.devDependencies['eslint-plugin-jest'] = null
+    delete dependencies.devDependencies['eslint-plugin-jest']
   }
 }

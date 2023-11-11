@@ -12,6 +12,6 @@ export class Prettier {
   }
 
   removeDependencies(dependencies) {
-    dependencies.devDependencies['eslint-config-prettier'] = null
+    delete dependencies.devDependencies['eslint-config-prettier']
   }
 }

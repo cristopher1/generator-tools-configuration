@@ -19,6 +19,6 @@ export class JsDoc {
   }
 
   removeDependencies(dependencies) {
-    dependencies.devDependencies['eslint-plugin-jsdoc'] = null
+    delete dependencies.devDependencies['eslint-plugin-jsdoc']
   }
 }

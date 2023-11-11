@@ -15,9 +15,9 @@ export class StandardJs {
   }
 
   removeDependencies(dependencies) {
-    dependencies.devDependencies['eslint-config-standard'] = null
-    dependencies.devDependencies['eslint-plugin-import'] = null
-    dependencies.devDependencies['eslint-plugin-n'] = null
-    dependencies.devDependencies['eslint-plugin-promise'] = null
+    delete dependencies.devDependencies['eslint-config-standard']
+    delete dependencies.devDependencies['eslint-plugin-import']
+    delete dependencies.devDependencies['eslint-plugin-n']
+    delete dependencies.devDependencies['eslint-plugin-promise']
   }
 }
