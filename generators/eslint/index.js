@@ -9,10 +9,6 @@ export default class GeneratorESlint extends Generator {
   constructor(args, opts) {
     super(args, opts)
 
-    this.option('override', {
-      default: false,
-      description: 'Overrides the babel configuration',
-    })
     this.option('jest', {
       default: false,
       description: 'Adds configuration to Jest',
@@ -29,25 +25,24 @@ export default class GeneratorESlint extends Generator {
       default: false,
       description: 'Adds configuration to Prettier',
     })
+    this.option('save-to-packagejson', {
+      default: false,
+      description: 'Saves the eslint configuration into package.json',
+    })
     this.option('skip-eslintignore', {
       default: 'false',
       description: 'Not generate a .eslintginore file',
-    })
-    this.option('skip-dependencies', {
-      default: false,
-      description: 'Does not add babel dependencies to package.json',
     })
   }
 
   #saveOptions() {
     this.answers = {
-      override: this.options.override,
       includeJest: this.options.jest,
       includeStandard: this.options.standard,
       includeJsDoc: this.options.jsdoc,
       includePrettier: this.options.prettier,
-      noEslintIgnore: this.options['skip-eslintignore'],
-      noDependencies: this.options['skip-dependencies'],
+      saveToPackageJson: this.options['save-to-packagejson'],
+      excludeEslintIgnore: this.options['skip-eslintignore'],
     }
   }
 
@@ -84,50 +79,81 @@ export default class GeneratorESlint extends Generator {
     }
   }
 
+  #createConfig(config, isInclude) {
+    return {
+      isInclude,
+      configurator: config,
+    }
+  }
+
   configuring() {
-    const {
-      includeJest,
-      includeStandard,
-      includeJsDoc,
-      includePrettier,
-      noDependencies,
-    } = this.answers
+    const { includeJest, includeStandard, includeJsDoc, includePrettier } =
+      this.answers
 
     const configurations = []
 
-    if (includeJest) {
-      configurations.push(new Jest())
-    }
+    const jest = this.#createConfig(new Jest(), includeJest)
+    configurations.push(jest)
 
-    if (includeJsDoc) {
-      configurations.push(new JsDoc())
-    }
+    const jsdoc = this.#createConfig(new JsDoc(), includeJsDoc)
+    configurations.push(jsdoc)
 
-    if (includePrettier) {
-      configurations.push(new Prettier())
-    }
-    if (includeStandard) {
-      configurations.push(new StandardJs())
-    }
+    const prettier = this.#createConfig(new Prettier(), includePrettier)
+    configurations.push(prettier)
+
+    const standard = this.#createConfig(new StandardJs(), includeStandard)
+    configurations.push(standard)
 
     for (const config of configurations) {
-      config.addConfiguration(this.eslintConfig)
-      if (!noDependencies) {
-        config.addDependencies(this.dependencies)
+      if (config.isInclude) {
+        config.configurator.addConfiguration(this.eslintConfig)
+        if (this.dependencies) {
+          config.configurator.addDependencies(this.dependencies)
+        }
+      } else {
+        if (this.dependencies) {
+          config.configurator.removeDependencies(this.dependencies)
+        }
       }
     }
   }
 
+  #writeEslintConfigToPackageJson(eslintConfigWriter, eslintConfig) {
+    const fileName = 'package.json'
+
+    eslintConfigWriter.addContent(fileName, { eslintConfig })
+    eslintConfigWriter.addContent('package.json', this.dependencies)
+  }
+
+  #writeEslintConfigToEslintrcJson(eslintConfigWriter, eslintConfig) {
+    const fileName = '.eslintrc.json'
+
+    eslintConfigWriter.addContent(fileName, eslintConfig)
+    eslintConfigWriter.addContent('package.json', this.dependencies)
+  }
+
+  #createEslintConfig(writer) {
+    const { saveToPackageJson } = this.answers
+    const eslintConfig = this.eslintConfig
+
+    if (saveToPackageJson) {
+      this.#writeEslintConfigToPackageJson(writer, eslintConfig)
+    } else {
+      this.#writeEslintConfigToEslintrcJson(writer, eslintConfig)
+    }
+  }
+
   writing() {
-    const { override } = this.options
+    const { excludeEslintIgnore } = this.answers
     const writer = new EslintJsonConfigWriter(this.fs)
 
-    if (override) {
-      writer.overrideContent('.eslintrc.json', this.eslintConfig)
-      writer.overrideContent('package.json', this.dependencies)
-    } else {
-      writer.addContent('.eslintrc.json', this.eslintConfig)
-      writer.addContent('.eslintrc.json', this.dependencies)
+    this.#createEslintConfig(writer)
+
+    if (!excludeEslintIgnore) {
+      this.fs.copy(
+        this.templatePath('./.eslintignore'),
+        this.destinationPath('.eslintignore'),
+      )
     }
   }
 }
