@@ -10,4 +10,8 @@ export class Prettier {
   addDependencies(dependencies) {
     dependencies.devDependencies['eslint-config-prettier'] = '^9.0.0'
   }
+
+  removeDependencies(dependencies) {
+    dependencies.devDependencies['eslint-config-prettier'] = null
+  }
 }

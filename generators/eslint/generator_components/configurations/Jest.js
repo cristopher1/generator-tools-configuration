@@ -17,4 +17,8 @@ export class Jest {
   addDependencies(dependencies) {
     dependencies.devDependencies['eslint-plugin-jest'] = '^27.2.3'
   }
+
+  removeDependencies(dependencies) {
+    dependencies.devDependencies['eslint-plugin-jest'] = null
+  }
 }

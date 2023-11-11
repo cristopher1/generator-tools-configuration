@@ -13,4 +13,11 @@ export class StandardJs {
     dependencies.devDependencies['eslint-plugin-n'] = '^16.0.2'
     dependencies.devDependencies['eslint-plugin-promise'] = '^6.1.1'
   }
+
+  removeDependencies(dependencies) {
+    dependencies.devDependencies['eslint-config-standard'] = null
+    dependencies.devDependencies['eslint-plugin-import'] = null
+    dependencies.devDependencies['eslint-plugin-n'] = null
+    dependencies.devDependencies['eslint-plugin-promise'] = null
+  }
 }

@@ -17,4 +17,8 @@ export class JsDoc {
   addDependencies(dependencies) {
     dependencies.devDependencies['eslint-plugin-jsdoc'] = '^46.8.2'
   }
+
+  removeDependencies(dependencies) {
+    dependencies.devDependencies['eslint-plugin-jsdoc'] = null
+  }
 }
