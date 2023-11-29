@@ -1,11 +1,11 @@
 import Generator from 'yeoman-generator'
-import { Jest } from './generator_components/configurations/Jest.js'
-import { JsDoc } from './generator_components/configurations/JsDoc.js'
-import { Prettier } from './generator_components/configurations/Prettier.js'
-import { StandardJs } from './generator_components/configurations/Standard.js'
+import { createConfigurationBuilder } from './generator_components/configurations/index.js'
 import { EslintJsonConfigWriter } from './generator_components/configWriters/EslintJsonConfigWriter.js'
 
-export default class GeneratorESlint extends Generator {
+export default class GeneratorEslint extends Generator {
+  /** @type {import('./generator_components/configurations/ConfigurationBuilder.js').ConfigurationBuilder} */
+  #configurationBuilder
+
   constructor(args, opts) {
     super(args, opts)
 
@@ -29,10 +29,6 @@ export default class GeneratorESlint extends Generator {
       default: false,
       description: 'Saves the eslint configuration into package.json',
     })
-    this.option('add-scripts', {
-      default: false,
-      description: 'Adds scripts to package.json',
-    })
     this.option('skip-eslintignore', {
       default: 'false',
       description: 'Not generate a .eslintginore file',
@@ -51,107 +47,36 @@ export default class GeneratorESlint extends Generator {
     }
   }
 
-  #getDefaultEslintConfig() {
-    return {
-      env: {
-        browser: true,
-        es2021: true,
-      },
-      extends: ['eslint:recommended'],
-      overrides: [
-        {
-          env: {
-            node: true,
-          },
-          files: ['.eslintrc.{js,cjs}'],
-          parserOptions: {
-            sourceType: 'script',
-          },
-        },
-      ],
-      parserOptions: {
-        ecmaVersion: 'latest',
-        sourceType: 'module',
-      },
-    }
-  }
-
-  #addDefaultDependencies(packageJsonContent) {
-    packageJsonContent.devDependencies = {
-      eslint: '^8.47.0',
-    }
-  }
-
-  #getPackageJsonContent() {
-    const defaultPackageJsonContent = {}
-    const packageJsonContent = this.fs.readJSON('package.json')
-
-    return packageJsonContent ?? defaultPackageJsonContent
-  }
-
   initializing() {
     this.#saveOptions()
-    const eslintConfig = this.#getDefaultEslintConfig()
-    const packageJsonContent = this.#getPackageJsonContent()
-
-    this.#addDefaultDependencies(packageJsonContent)
-
-    this.eslintConfig = eslintConfig
-    this.packageJsonContent = packageJsonContent
-  }
-
-  #createConfig(config, isInclude) {
-    return {
-      isInclude,
-      configurator: config,
-    }
+    this.#configurationBuilder = createConfigurationBuilder(this.fs)
   }
 
   configuring() {
-    const {
-      includeJest,
-      includeStandard,
-      includeJsDoc,
-      includePrettier,
-      addScripts,
-    } = this.answers
-    const packageJsonContent = this.packageJsonContent
-    const eslintConfig = this.eslintConfig
-    const configurations = []
+    const { includeJest, includeStandard, includeJsDoc, includePrettier } =
+      this.answers
 
-    const jest = this.#createConfig(new Jest(), includeJest)
-    configurations.push(jest)
-
-    const jsdoc = this.#createConfig(new JsDoc(), includeJsDoc)
-    configurations.push(jsdoc)
-
-    const prettier = this.#createConfig(new Prettier(), includePrettier)
-    configurations.push(prettier)
-
-    const standard = this.#createConfig(new StandardJs(), includeStandard)
-    configurations.push(standard)
-
-    for (const config of configurations) {
-      if (config.isInclude) {
-        config.configurator.addConfiguration(eslintConfig)
-        config.configurator.addDependencies(packageJsonContent)
-      } else {
-        if (this.packageJsonContent.devDependencies) {
-          config.configurator.removeDependencies(packageJsonContent)
-        }
-      }
+    if (includeJest) {
+      this.#configurationBuilder.includeJestConfig()
+    }
+    if (includeStandard) {
+      this.#configurationBuilder.includeStandardJSConfig()
+    }
+    if (includeJsDoc) {
+      this.#configurationBuilder.includeJSDocConfig()
+    }
+    if (includePrettier) {
+      this.#configurationBuilder.includePrettierConfig()
     }
 
-    if (addScripts) {
-      packageJsonContent.scripts = {
-        lint: 'eslint --ext .js,.mjs,.cjs .',
-        'lint:fix': 'npm run lint -- --fix',
-      }
-    }
+    const configuration = this.#configurationBuilder.build()
+
+    this.eslintConfig = configuration.getEslintConfig()
+    this.packageJsonConfig = configuration.getPackageJsonConfig()
   }
 
   #writePackageJson(eslintConfigWriter) {
-    eslintConfigWriter.writeContent('package.json', this.packageJsonContent)
+    eslintConfigWriter.writeContent('package.json', this.packageJsonConfig)
   }
 
   #writeEslintConfigToPackageJson(eslintConfigWriter, eslintConfig) {
@@ -187,7 +112,7 @@ export default class GeneratorESlint extends Generator {
 
     if (!excludeEslintIgnore) {
       this.fs.copy(
-        this.templatePath('./.eslintignore'),
+        this.templatePath('.eslintignore'),
         this.destinationPath('.eslintignore'),
       )
     }
